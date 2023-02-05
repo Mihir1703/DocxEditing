@@ -1,30 +1,30 @@
+import shutil
 from docx import Document
-from docx2pdf import convert
 import pandas as pd
+from docx2pdf import convert
 import os
+import subprocess
 
-# email_info = pd.read_csv('Book1.csv', header=None)
-# print(email_info)
+def doc2pdf_linux(doc,dirs):
+    """
+    convert a doc/docx document to pdf format (linux only, requires libreoffice)
+    :param doc: path to document
+    """
+    cmd = 'libreoffice --convert-to pdf'.split() + [doc] + '--outdir'.split() + [dirs]
+    p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    p.wait(timeout=10)
+    stdout, stderr = p.communicate()
+    if stderr:
+        raise subprocess.SubprocessError(stderr)
 
-# info = [(Name of startup) for Name of startup in zip(email_info[:][1], email_info[:][2]) if '@gmail' in mail]
-
-
-def main1(tc):
-
-    template_file_path = 'E:/test/Express.docx'
-    output_file_path = 'E:/test/'+'output/'+tc + '.docx'
+def main1(name='Name of Proff'):
+    os.mkdir('output')
+    template_file_path = './input.docx'
+    os.mkdir(f'output/{name}')
+    output_file_path = 'output/'+name + '/' + name + '.docx'
 
     variables = {
-        "Express Stores": tc,
-        # "${EMPLOEE_TITLE}": "Software Engineer",
-        # "${EMPLOEE_ID}": "302929393",
-        # "${EMPLOEE_ADDRESS}": "דרך השלום מנחם בגין דוגמא",
-        # "${EMPLOEE_PHONE}": "+972-5056000000",
-        # "${EMPLOEE_EMAIL}": "example@example.com",
-        # "${START_DATE}": "03 Jan, 2021",
-        # "${SALARY}": "10,000",
-        # "${SALARY_30}": "3,000",
-        # "${SALARY_70}": "7,000",
+        "<name>": name,
     }
 
     template_document = Document(template_file_path)
@@ -52,13 +52,10 @@ def replace_text_in_paragraph(paragraph, key, value):
 
 
 if __name__ == '__main__':
-    email_info = pd.read_csv('Book1.csv', header=None)
-    info = [i for i in email_info[:][0]]
-    # print(email_info)
-    for num in info:
-        # print(num)
-        main1(num)
-    convert("output/")
-filelist = [f for f in os.listdir("E:/test/output") if f.endswith(".docx")]
-for f in filelist:
-    os.remove(os.path.join("E:/test/output", f))
+    data = pd.read_csv('index.csv')
+    data = data.to_numpy()
+    info = [i[0] for i in data]
+    for i in info:
+        main1(name=i)
+        doc2pdf_linux(f'output/{i}/{i}.docx',f'output/{i}/')
+    shutil.make_archive('output','zip','output')
